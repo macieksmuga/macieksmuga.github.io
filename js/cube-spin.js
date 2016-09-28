@@ -114,7 +114,7 @@ function tick(){
   lastStepTime = now;
 
   // set the disco balls shift factor
-  gl.uniform1f(u_Shift, degB * 5);
+  gl.uniform1f(u_Shift, degB * 2);
 
   // create transform matrix based on degB and radB as computed above.
   // Matrix4 is a utility object defined in the cuon-matrix library, 
@@ -133,7 +133,7 @@ function tick(){
 
   // set matrix for perspective transformation (rectangular solid -> Frustum)
   // arguments are (angle_of_view, aspect_ratio, cutoff_plane_near, cutoff_plane_far)
-  xformMatrix.setPerspective(80, 1.0, 0.1, 2.0);
+  xformMatrix.setPerspective(60, 1.0, 0.1, 2.0);
   gl.uniformMatrix4fv(u_PxvMatrix, false, xformMatrix.elements);
 
   // describe position data layout in buffer (GPU side)
