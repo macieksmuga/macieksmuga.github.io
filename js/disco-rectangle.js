@@ -11,7 +11,7 @@ var VSHADER_SOURCE =
   'attribute vec4 a_Position; attribute vec4 a_Color;' +
   'varying vec4 v_Color;' +
   'uniform mat4 u_PositionShift;' +
-  'void main(){gl_Position = a_Position * u_PositionShift; gl_PointSize = 1.0; v_Color = a_Color;}';
+  'void main(){gl_Position = u_PositionShift * a_Position; v_Color = a_Color;}';
 
 // GLSL fragment shader
 // honestly, 90% of the magic for this demo happens inside here
@@ -20,7 +20,7 @@ var FSHADER_SOURCE =
   'uniform mat4 u_ColorShift;' +
   'void main(){' +
     // dd is the length of the side of each pulsing square.
-    'float dd = 25.0;' +
+    'float dd = 15.0;' +
     // rd is the normalized radial distance from the center of each pulsing square
     'float rd = sqrt(pow(0.5 - mod(gl_FragCoord.x,dd)/dd, 2.0) + pow(0.5 - mod(gl_FragCoord.y,dd)/dd, 2.0));' +
     // cs is the rotating color matrix
