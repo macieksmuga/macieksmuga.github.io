@@ -6,15 +6,57 @@
 .content {
   font-family:sans-serif;
 }
+div {
+  margin-bottom:1em;
+}
 
   </style>
 </head>
 <body>
   <div class="content">
     <h3>Maciek's fun code</h3>
-    <h5>WebGL Experiment 1: Disco Rectangle</h4>
-    <canvas id="disco1" width="400" height="400"></canvas>
+    <div>
+      <h5>WebGL Experiment 1: Disco Rectangle</h5>
+      <canvas id="disco1" width="400" height="400"></canvas>
+    </div>
+    <div>
+      <h5>WebGL Experiment 2: Spinning Cube</h5>
+      <canvas id="cubespin-canvas" width="400" height="400"></canvas>
+    </div>
   </div>
-  <script src="js/disco-rectangle.js"></script>
+
+
+<!-- cuon-matrix.js is a free utility 3D matrix library from the WebGL Programming Guide book -->
+<script src="https://raw.githubusercontent.com/yukoba/WebGLBook/master/lib/cuon-matrix.js"></script>
+
+<script id="cubespin-shader-vs" type="x-shader/x-vertex">
+// GLSL Vertex Shader
+ attribute vec4 a_Position; attribute vec4 a_Color;
+ varying vec4 v_Color;
+ uniform mat4 u_PxvMatrix;
+ uniform mat4 u_PovMatrix;
+ uniform mat4 u_RotMatrix;
+ void main(){
+    gl_Position = u_PxvMatrix * u_PovMatrix * u_RotMatrix * a_Position; v_Color = a_Color;
+}
+</script>
+<script id="cubespin-shader-fs" type="x-shader/x-fragment">
+// GLSL fragment shader
+ precision mediump float; 
+ varying vec4 v_Color;
+ uniform float u_Shift;
+ void main(){
+   float dd = 49.0;
+   float rd = 2.0 * sqrt(pow(0.5 - mod(gl_FragCoord.x + u_Shift,dd)/dd, 2.0)
+      + pow(0.5 - mod(gl_FragCoord.y + u_Shift,dd)/dd, 2.0));
+   vec4 cs = v_Color;
+   gl_FragColor = vec4(0.1 * cs.x + max(cs.x - rd, 0.0), 0.1 * cs.y + max(cs.y - rd, 0.0), 0.1 * cs.z + max(cs.z - rd, 0.0), 1.0);
+ }
+ // 'gl_FragColor = cs;}'; // use this if you get tired of the disco effect, defined above
+</script>
+
+<script src="js/disco-rectangle.js"></script>
+<script src="js/cube-spin.js"></script>
+
 </body>
 </html>
