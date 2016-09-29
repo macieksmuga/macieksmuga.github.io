@@ -32,67 +32,44 @@ var u_PxvMatrix = gl.getUniformLocation(program, 'u_PxvMatrix');
 var u_PovMatrix = gl.getUniformLocation(program, 'u_PovMatrix');
 var u_RotMatrix = gl.getUniformLocation(program, 'u_RotMatrix');
 
+
 // create, bind & populate vertex buffer
 var vertexBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
 var vertexData = new Float32Array([
-    // FACE 1: -x
-   -0.3,-0.3,-0.3, 1.0, 0.0, 0.0,
-   -0.3,-0.3, 0.3, 1.0, 1.0, 0.0,
-   -0.3, 0.3,-0.3, 0.0, 1.0, 1.0,
+ -0.3,-0.3,-0.3, 1.0, 1.0, 1.0, // 0: white
 
-   -0.3, 0.3, 0.3, 1.0, 1.0, 1.0,
-   -0.3,-0.3, 0.3, 1.0, 1.0, 0.0,
-   -0.3, 0.3,-0.3, 0.0, 1.0, 1.0,
+  0.3,-0.3,-0.3, 0.0, 1.0, 1.0, // 1: cyan
+ -0.3, 0.3,-0.3, 1.0, 0.0, 1.0, // 2: magenta
+ -0.3,-0.3, 0.3, 1.0, 1.0, 0.0, // 3: yellow
 
-    // FACE 2: +x
-    0.3,-0.3,-0.3, 0.0, 0.0, 0.0,
-    0.3,-0.3, 0.3, 0.0, 0.0, 1.0,
-    0.3, 0.3,-0.3, 0.0, 1.0, 0.0,
+ -0.3, 0.3, 0.3, 1.0, 0.0, 0.0, // 4: red
+  0.3,-0.3, 0.3, 0.0, 1.0, 0.0, // 5: blue
+  0.3, 0.3,-0.3, 0.0, 0.0, 1.0, // 6: green
 
-    0.3, 0.3, 0.3, 1.0, 0.0, 1.0,
-    0.3,-0.3, 0.3, 0.0, 0.0, 1.0,
-    0.3, 0.3,-0.3, 0.0, 1.0, 0.0,
-
-    // FACE 3: -y
-    -0.3,-0.3,-0.3, 1.0, 0.0, 0.0,
-    -0.3,-0.3, 0.3, 1.0, 1.0, 0.0,
-     0.3,-0.3,-0.3, 0.0, 0.0, 0.0,
-
-     0.3,-0.3, 0.3, 0.0, 0.0, 1.0,
-    -0.3,-0.3, 0.3, 1.0, 1.0, 0.0,
-     0.3,-0.3,-0.3, 0.0, 0.0, 0.0,
-
-     // FACE 4: +y
-    -0.3, 0.3,-0.3, 0.0, 1.0, 1.0,
-    -0.3, 0.3, 0.3, 1.0, 1.0, 1.0,
-     0.3, 0.3,-0.3, 0.0, 1.0, 0.0,
-
-    -0.3, 0.3, 0.3, 1.0, 1.0, 1.0,
-     0.3, 0.3,-0.3, 0.0, 1.0, 0.0,
-     0.3, 0.3, 0.3, 1.0, 0.0, 1.0,
-
-     // FACE 5: -z
-    -0.3,-0.3,-0.3, 1.0, 0.0, 0.0,
-    -0.3, 0.3,-0.3, 0.0, 1.0, 1.0,
-     0.3,-0.3,-0.3, 0.0, 0.0, 0.0,
-
-    -0.3, 0.3,-0.3, 0.0, 1.0, 1.0,
-     0.3,-0.3,-0.3, 0.0, 0.0, 0.0,
-     0.3, 0.3,-0.3, 0.0, 1.0, 0.0,
-
-     // FACE 6: +z
-     0.3, 0.3, 0.3, 1.0, 0.0, 1.0,
-    -0.3, 0.3, 0.3, 1.0, 1.0, 1.0,
-     0.3,-0.3, 0.3, 0.0, 0.0, 1.0,
-
-    -0.3, 0.3, 0.3, 1.0, 1.0, 1.0,
-     0.3,-0.3, 0.3, 0.0, 0.0, 1.0,
-    -0.3,-0.3, 0.3, 1.0, 1.0, 0.0,
-	]);
+  0.3, 0.3, 0.3, 0.0, 0.0, 0.0, // 7: black
+]);
 
 var FSIZE = vertexData.BYTES_PER_ELEMENT;
 gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+
+
+// create bind & populate index buffer
+var indexBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+var indexData = new Uint8Array([
+  0,1,2, 1,2,6, // top
+  0,1,3, 1,3,5, // left
+  0,2,3, 2,3,4, // front
+
+  7,4,5, 4,5,3, // bottom
+  7,4,6, 4,6,2, // right
+  7,5,6, 5,6,1, // back
+]);
+
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
 
 // run the program
 gl.useProgram(program);
@@ -146,7 +123,7 @@ function tick(){
   gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, FSIZE * 6, FSIZE * 3);
   gl.enableVertexAttribArray(a_Color);
 
-  gl.drawArrays(gl.TRIANGLES, 0, 36);
+  gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
 
   requestAnimationFrame(tick);
 }
