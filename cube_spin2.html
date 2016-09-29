@@ -22,7 +22,7 @@
  void main(){
     gl_Position = u_PxvMatrix * u_PovMatrix * u_RotMatrix * a_Position; 
     v_Scatter = dot(a_Normal, vec4(0.5, 0.4, 0.3, 1.0));
-    v_Color = a_Color + a_Normal * 0.5;
+    v_Color = a_Color + (1.0 + a_Normal) * 0.5;
 
 }
 </script>
