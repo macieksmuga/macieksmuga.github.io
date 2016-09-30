@@ -15,12 +15,10 @@
  varying vec4 v_Color;
  varying float v_Scatter;
 
- uniform mat4 u_PxvMatrix;
- uniform mat4 u_PovMatrix;
- uniform mat4 u_RotMatrix;
+ uniform mat4 u_MvpMatrix;
 
  void main(){
-    gl_Position = u_PxvMatrix * u_PovMatrix * u_RotMatrix * a_Position; 
+    gl_Position = u_MvpMatrix * a_Position; 
     v_Scatter = dot(a_Normal, vec4(0.5, 0.4, 0.3, 1.0));
     v_Color = a_Color + (1.0 + a_Normal) * 0.5;
 
@@ -38,12 +36,12 @@
 
  void main(){
    float dd = 49.0;
-   float rd = 2.0 * sqrt(pow(0.5 - mod(gl_FragCoord.x + u_Shift,dd)/dd, 2.0)
+   float rd = 3.0 * sqrt(pow(0.5 - mod(gl_FragCoord.x + u_Shift,dd)/dd, 2.0)
       + pow(0.5 - mod(gl_FragCoord.y + u_Shift,dd)/dd, 2.0));
    vec4 cs = v_Color;
    gl_FragColor = vec4(0.1 * cs.x + max(cs.x - rd, 0.0), 0.1 * cs.y + max(cs.y - rd, 0.0), 0.1 * cs.z + max(cs.z - rd, 0.0), 1.0) + v_Scatter * 0.05;
  }
- // 'gl_FragColor = cs;}'; // use this if you get tired of the disco effect, defined above
+ // gl_FragColor = cs + v_Scatter * 0.2;} // use this if you get tired of the disco effect, defined above
 </script>
 <script>
 
@@ -75,9 +73,7 @@ gl.clear(gl.COLOR_BUFFER_BIT);
 
 // handles for shader variables
 var u_Shift = gl.getUniformLocation(program, 'u_Shift');
-var u_PxvMatrix = gl.getUniformLocation(program, 'u_PxvMatrix');
-var u_PovMatrix = gl.getUniformLocation(program, 'u_PovMatrix');
-var u_RotMatrix = gl.getUniformLocation(program, 'u_RotMatrix');
+var u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
 var u_LightDirection = gl.getUniformLocation(program, 'u_LightDirection');
 
 var a_Position = gl.getAttribLocation(program, 'a_Position');
@@ -175,25 +171,29 @@ function tick(){
   // set the disco balls shift factor
   gl.uniform1f(u_Shift, degB * 5);
 
-  // create transform matrix based on degB and radB as computed above.
+  // create transform matrices based on degB and radB as computed above.
   // Matrix4 is a utility object defined in the cuon-matrix library, 
   // https://github.com/yukoba/WebGLBook/tree/master/lib
-  var xformMatrix = new Matrix4();
   
-  // set matrix for triangle rotation around Z axis (in XY plane)
-  // arguments are (angle_deg, axis_x, axis_y, axis_z)
-  xformMatrix.setRotate(degB*5, 0.0, 0.0, 1.0);
-  gl.uniformMatrix4fv(u_RotMatrix, false, xformMatrix.elements);
+  // set matrix for cube rotation around Z axis (in XY plane)
+  // setRotate(angle_deg, axis_x, axis_y, axis_z)
+  var modelMatrix = new Matrix4();
+  modelMatrix.setRotate(degB*5, 0.0, 0.0, 1.0);
 
   // set matrix for POV rotation around Y axis (in the XZ plane)
-  // arguments are (eyePos_x, eyePos_y, eyePos_z, lookAt_x, lookAt_y, lookAt_z, up_x, up_y, up_z)
-  xformMatrix.setLookAt(Math.sin(radB), -0.5, Math.cos(radB), 0, 0, 0, 0, 1, 0);
-  gl.uniformMatrix4fv(u_PovMatrix, false, xformMatrix.elements);
+  // setLookAt(eyePos_x, eyePos_y, eyePos_z, lookAt_x, lookAt_y, lookAt_z, up_x, up_y, up_z)
+  var viewMatrix = new Matrix4();
+  viewMatrix.setLookAt(Math.sin(radB), -0.5, Math.cos(radB), 0, 0, 0, 0, 1, 0);
 
   // set matrix for perspective transformation (rectangular solid -> Frustum)
-  // arguments are (angle_of_view, aspect_ratio, cutoff_plane_near, cutoff_plane_far)
-  xformMatrix.setPerspective(80, 1.0, 0.1, 2.0);
-  gl.uniformMatrix4fv(u_PxvMatrix, false, xformMatrix.elements);
+  // setPerspective(angle_of_view, aspect_ratio, cutoff_plane_near, cutoff_plane_far)
+  var projMatrix = new Matrix4();
+  projMatrix.setPerspective(70, 1.0, 0.1, 2.0);
+
+  // Model-View-Perspective matrix applies each in turn
+  var mvpMatrix = new Matrix4();
+  mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
+  gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
 
   gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
 
