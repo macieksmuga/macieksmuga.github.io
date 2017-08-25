@@ -5,13 +5,13 @@
 	
 	<body>
 		<div id="root"></div>
-		<script src="https://d3js.org/d3.v3.min.js"></script>
+		<script src="libs/d3.v3.min.js"></script>
 		<script>
 
 "use strict"
-const svgsize = 800
-const cellsize = 2
-const center = svgsize/2
+const svgsize = 700
+const cellsize = 3
+const center = svgsize/3
 
 
 
@@ -30,7 +30,7 @@ const arc = (i) => { // takes arguments 0,1,2,3 representing quadrants
   )
 }
 
-const LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3
+const LEFT = "L", RIGHT = "R", UP = "U", DOWN = "D"
 const START = {position:[0,0], orientation:UP}
 
 function NextSegment(direction, from = START) {
@@ -39,58 +39,59 @@ function NextSegment(direction, from = START) {
   	// position is in virtual coordiantes, orientation is one of LEFT, RIGHT, UP, DOWN
  	 // and direction is one of LEFT or RIGHT indicating next cell position
 
-  	var quadrant, offset, deltaPosition, nextOrientation
-  
-  	if (orientation === UP && direction === LEFT) {
-    	quadrant = 0
-    	offset = [-2,-1]
-    	deltaPosition = [-1,-1]
-    	nextOrientation = LEFT
-  	}
-  	else if (orientation === UP && direction === RIGHT){
-    	quadrant = 3
-    	offset = [0,-1]   	
-    	deltaPosition = [1,-1]
-    	nextOrientation = RIGHT
-  	}
-  	else if (orientation === RIGHT && direction === LEFT){
-    	quadrant = 1
-    	offset = [-1,-2]    	
-    	deltaPosition = [1,-1]
-    	nextOrientation = UP
-  	}
-  	else if (orientation === RIGHT && direction === RIGHT){
-  		quadrant = 0
-  		offset = [-1,0]
-    	deltaPosition = [1,1]
-    	nextOrientation = DOWN
-	}
-  	else if (orientation === DOWN && direction === LEFT){
-    	quadrant = 2
-    	offset = [0,-1]   	
-    	deltaPosition = [1,1]
-    	nextOrientation = RIGHT
-  	}
-  	else if (orientation === DOWN && direction === RIGHT){
-  		quadrant = 1
-  		offset = [-2,-1]
-    	deltaPosition = [-1,1]
-    	nextOrientation = LEFT
-  	}
-  	else if (orientation === LEFT && direction === LEFT){
-    	quadrant = 3
-    	offset = [-1,0]   	
-    	deltaPosition = [-1,1]
-    	nextOrientation = DOWN
-  	}
-  	else if (orientation === LEFT && direction === RIGHT){
-    	quadrant = 2
-    	offset = [-1,-2]   	
-    	deltaPosition = [-1,-1]
-    	nextOrientation = UP
-  	}
-  	else {
-  		console.log("bad orientation:", orientation, "direction:", direction)
+ 	const state = { // maps current state to current rendering settings and next state
+ 		"UL": {
+ 			quadrant: 0,
+ 			offset: [-2,-1],
+    		deltaPosition: [-1,-1],
+    		nextOrientation: LEFT
+ 		},
+ 		"UR":{
+ 			quadrant: 3,
+ 			offset: [0,-1],
+    		deltaPosition: [1,-1],
+    		nextOrientation: RIGHT
+ 		},
+  		"RL":{
+ 			quadrant: 1,
+ 			offset: [-1,-2],
+    		deltaPosition: [1,-1],
+    		nextOrientation: UP
+ 		},
+  		"RR":{
+ 			quadrant: 0,
+ 			offset: [-1,0],
+    		deltaPosition: [1,1],
+    		nextOrientation: DOWN
+ 		},
+  		"DL":{
+ 			quadrant: 2,
+ 			offset: [0,-1],
+    		deltaPosition: [1,1],
+    		nextOrientation: RIGHT
+ 		},
+  		"DR":{
+ 			quadrant: 1,
+ 			offset: [-2,-1],
+    		deltaPosition: [-1,1],
+    		nextOrientation: LEFT
+ 		},
+  		"LL":{
+ 			quadrant: 3,
+ 			offset: [-1,0],
+    		deltaPosition: [-1,1],
+    		nextOrientation: DOWN
+ 		},
+  		"LR":{
+ 			quadrant: 2,
+ 			offset: [-1,-2],
+    		deltaPosition: [-1,-1],
+    		nextOrientation: UP
+ 		},
+ 	}
+    const {quadrant, offset, deltaPosition, nextOrientation} = state[orientation+direction]
+  	if (!deltaPosition) {
+  		console.log("bad orientation:", orientation, "and/or direction:", direction)
     }
   	const pos = position.map((p,i) => (p+offset[i])*cellsize+center)
   	svg.append("path")
@@ -120,8 +121,8 @@ const dragon = (n) => {
 	}
 	return nextDragonArray(dragon(n-1))
 }
-const turns = dragon(14)
-//const turns =[LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, LEFT, RIGHT, LEFT, RIGHT, LEFT]
+const turns = dragon(11)
+//const turns =[RIGHT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT] // etc...
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -131,7 +132,7 @@ async function drawDragon(){
 	var a = START
 	for(let t of turns){
 		a = NextSegment(t, a)
-		await sleep(50);
+		await sleep(10);
 	}
 }
 
