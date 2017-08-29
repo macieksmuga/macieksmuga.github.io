@@ -5,18 +5,16 @@
 	
 	<body>
 		<div id="root"></div>
-		<script src="libs/d3.v3.min.js"></script>
+		<script src="http://d3js.org/d3.v3.min.js"></script>
 		<script>
 
 "use strict"
-const svgsize = 700
+const svgsize = 500
 const cellsize = 3
 const center = svgsize/3
 
-
-
 const svg = d3.select("#root").append("svg")
-  .attr("width",svgsize)
+svg.attr("width",svgsize)
   .attr("height",svgsize)
   .style("background","#ddd")
 
@@ -26,9 +24,10 @@ const arc = (i) => { // takes arguments 0,1,2,3 representing quadrants
     .innerRadius(cellsize-0.5)
     .outerRadius(cellsize+0.5)
     .startAngle(Math.PI/2 * i)
-    .endAngle(Math.PI/2 * (i + 1))
+    .endAngle(Math.PI/2 * (i + 1))()
   )
 }
+const arcs = [arc(0),arc(1),arc(2),arc(3)]
 
 const LEFT = "L", RIGHT = "R", UP = "U", DOWN = "D"
 const START = {position:[0,0], orientation:UP}
@@ -93,13 +92,8 @@ function NextSegment(direction, from = START) {
   	if (!deltaPosition) {
   		console.log("bad orientation:", orientation, "and/or direction:", direction)
     }
-  	const pos = position.map((p,i) => (p+offset[i])*cellsize+center)
-    console.log(arc(quadrant))
-  	svg.append("path")
-    	.attr("d", arc(quadrant))
-    	.attr("transform", "translate("+pos+")")
-  
-  	return {position: [position[0]+deltaPosition[0],position[1]+deltaPosition[1]], orientation: nextOrientation}
+  	const pos = position.map((p,i) => (p+offset[i])*cellsize+center)  
+  	return [{quadrant, pos}, {position: [position[0]+deltaPosition[0],position[1]+deltaPosition[1]], orientation: nextOrientation}]
   
 } 
 
@@ -122,22 +116,33 @@ const dragon = (n) => {
 	}
 	return nextDragonArray(dragon(n-1))
 }
-const turns = dragon(11)
-//const turns =[RIGHT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT] // etc...
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function drawDragon(){
-	var a = START
+async function drawDragon(n){
+
+  const turns = dragon(n)
+  //const turns =[RIGHT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT] // etc...
+	var a = NextSegment(turns.shift(), START)
+  var data = []
 	for(let t of turns){
-		a = NextSegment(t, a)
-		await sleep(10);
+    data.push(a[0])
+
+    svg.selectAll("path").data(data)
+        .attr("fill-opacity", (d,i) => 1.0 * i / data.length)
+      .enter().append("path")
+        .attr("d", d => arcs[d.quadrant])
+        .attr("transform", d => "translate("+d.pos+")")
+
+
+		a = NextSegment(t, a[1])
+		await sleep(5);
 	}
 }
 
-drawDragon()
+drawDragon(10)
 
 
 		</script>

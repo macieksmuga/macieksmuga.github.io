@@ -192,7 +192,9 @@ function tick(){
 
   // Model-View-Perspective matrix applies each in turn
   var mvpMatrix = new Matrix4();
-  mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
+  mvpMatrix.set(projMatrix)
+    .multiply(viewMatrix)
+    .multiply(modelMatrix);
   gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
 
   gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
