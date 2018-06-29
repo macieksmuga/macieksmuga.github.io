@@ -1,0 +1,286 @@
+ <!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<style>
+.axis { cursor: pointer; }
+.axis text { font-family: sans-serif; }
+.dashed {
+  fill: none;
+  stroke: #777;
+  stroke-dasharray: 1,4;
+}
+
+</style>
+<body>
+<svg id="skircles_svg" display="inline"></svg>
+<script src="libs/d3.v3.min.js"></script>
+<script>
+
+// Rapidly prototyping a new visualization type with D3
+
+// Maciek Smuga-Otto
+// Software Engineer at Looker
+// Previously at an HR startup in San Francisco
+
+// This code is derived from an early prototype
+// we were developing at my previous job -
+// Goal was to show distances between "skillset circles" or "skircles"
+// This is a highly multi-dimensional problem, requires new type of vis
+// Patterned off the Stanford Thesis Browser (which was written in Flash)
+
+
+
+
+
+
+
+// Skill set summary data
+const skillSets = [
+    {"coarse_label": "Product", "fine_label": "Product Design", "size": 36}, 
+    {"coarse_label": "Product", "fine_label": "Product Management", "size": 158}, 
+    {"coarse_label": "Product", "fine_label": "Illustration", "size": 27}, 
+    {"coarse_label": "Finance", "fine_label": "Accounting", "size": 47}, 
+    {"coarse_label": "HR", "fine_label": "HR Generalist", "size": 34}, 
+    {"coarse_label": "HR", "fine_label": "Talent Acquisition", "size": 15}, 
+    {"coarse_label": "Marketing", "fine_label": "Digital Marketing", "size": 381}, 
+    {"coarse_label": "Marketing", "fine_label": "General Marketing", "size": 13}, 
+    {"coarse_label": "Marketing", "fine_label": "Marketing Design", "size": 42}, 
+    {"coarse_label": "Sales", "fine_label": "Account Management", "size": 74}, 
+    {"coarse_label": "Sales", "fine_label": "B2B Sales", "size": 263}, 
+    {"coarse_label": "Sales", "fine_label": "Consulting", "size": 45}, 
+    {"coarse_label": "IT", "fine_label": "Databases", "size": 103}, 
+    {"coarse_label": "IT", "fine_label": "IT Generalist", "size": 70}, 
+    {"coarse_label": "IT", "fine_label": "Network Infrastructure", "size": 42}, 
+    {"coarse_label": "IT", "fine_label": "Security", "size": 20}, 
+    {"coarse_label": "Engineering", "fine_label": "Hardware Engineering", "size": 26}, 
+    {"coarse_label": "Engineering", "fine_label": "Software Engineering", "size": 643}, 
+    {"coarse_label": "Engineering", "fine_label": "Data Science", "size": 64}, 
+    {"coarse_label": "Other", "fine_label": "Administrative", "size": 15}, 
+    {"coarse_label": "Other", "fine_label": "Business Development", "size": 15}, 
+    {"coarse_label": "Other", "fine_label": "Customer Support", "size": 280}, 
+    {"coarse_label": "Other", "fine_label": "Legal", "size": 32}
+];
+const skillSetDistances = [
+    [0.0, 0.426, 0.41, 0.477, 0.473, 0.475, 0.435, 0.451, 0.411, 0.472, 0.472, 0.466, 0.462, 0.458, 0.473, 0.475, 0.471, 0.423, 0.47, 0.475, 0.465, 0.472, 0.474], 
+    [0.426, 0.0, 0.447, 0.319, 0.302, 0.364, 0.324, 0.205, 0.456, 0.19, 0.242, 0.206, 0.328, 0.194, 0.418, 0.451, 0.451, 0.43, 0.363, 0.374, 0.119, 0.198, 0.399], 
+    [0.41, 0.447, 0.0, 0.477, 0.473, 0.474, 0.416, 0.454, 0.396, 0.471, 0.474, 0.472, 0.453, 0.451, 0.467, 0.475, 0.444, 0.392, 0.446, 0.469, 0.471, 0.455, 0.478], 
+    [0.477, 0.319, 0.477, 0.0, 0.422, 0.452, 0.463, 0.421, 0.477, 0.413, 0.47, 0.454, 0.443, 0.427, 0.466, 0.452, 0.477, 0.476, 0.415, 0.402, 0.403, 0.412, 0.411], 
+    [0.473, 0.302, 0.473, 0.422, 0.0, 0.162, 0.443, 0.422, 0.475, 0.351, 0.448, 0.429, 0.446, 0.389, 0.451, 0.47, 0.476, 0.472, 0.457, 0.375, 0.393, 0.316, 0.436], 
+    [0.475, 0.364, 0.474, 0.452, 0.162, 0.0, 0.394, 0.4, 0.468, 0.298, 0.372, 0.369, 0.428, 0.4, 0.441, 0.455, 0.478, 0.463, 0.458, 0.387, 0.379, 0.352, 0.459], 
+    [0.435, 0.324, 0.416, 0.463, 0.443, 0.394, 0.0, 0.171, 0.253, 0.258, 0.343, 0.401, 0.449, 0.433, 0.456, 0.47, 0.474, 0.395, 0.415, 0.362, 0.314, 0.395, 0.465], 
+    [0.451, 0.205, 0.454, 0.421, 0.422, 0.4, 0.171, 0.0, 0.387, 0.169, 0.289, 0.353, 0.444, 0.385, 0.453, 0.473, 0.467, 0.442, 0.435, 0.421, 0.225, 0.362, 0.454], 
+    [0.411, 0.456, 0.396, 0.477, 0.475, 0.468, 0.253, 0.387, 0.0, 0.437, 0.474, 0.475, 0.473, 0.469, 0.474, 0.476, 0.476, 0.427, 0.465, 0.458, 0.457, 0.469, 0.479], 
+    [0.472, 0.19, 0.471, 0.413, 0.351, 0.298, 0.258, 0.169, 0.437, 0.0, 0.153, 0.361, 0.439, 0.399, 0.446, 0.471, 0.472, 0.465, 0.428, 0.295, 0.171, 0.169, 0.428], 
+    [0.472, 0.242, 0.474, 0.47, 0.448, 0.372, 0.343, 0.289, 0.474, 0.153, 0.0, 0.165, 0.308, 0.354, 0.395, 0.441, 0.47, 0.445, 0.452, 0.432, 0.288, 0.348, 0.463], 
+    [0.466, 0.206, 0.472, 0.454, 0.429, 0.369, 0.401, 0.353, 0.475, 0.361, 0.165, 0.0, 0.218, 0.158, 0.387, 0.423, 0.459, 0.42, 0.433, 0.461, 0.275, 0.356, 0.453], 
+    [0.462, 0.328, 0.453, 0.443, 0.446, 0.428, 0.449, 0.444, 0.473, 0.439, 0.308, 0.218, 0.0, 0.138, 0.209, 0.388, 0.395, 0.254, 0.37, 0.438, 0.442, 0.363, 0.471], 
+    [0.458, 0.194, 0.451, 0.427, 0.389, 0.4, 0.433, 0.385, 0.469, 0.399, 0.354, 0.158, 0.138, 0.0, 0.315, 0.376, 0.425, 0.37, 0.43, 0.437, 0.387, 0.264, 0.447], 
+    [0.473, 0.418, 0.467, 0.466, 0.451, 0.441, 0.456, 0.453, 0.474, 0.446, 0.395, 0.387, 0.209, 0.315, 0.0, 0.316, 0.404, 0.36, 0.422, 0.415, 0.453, 0.362, 0.473], 
+    [0.475, 0.451, 0.475, 0.452, 0.47, 0.455, 0.47, 0.473, 0.476, 0.471, 0.441, 0.423, 0.388, 0.376, 0.316, 0.0, 0.461, 0.446, 0.467, 0.469, 0.468, 0.462, 0.44], 
+    [0.471, 0.451, 0.444, 0.477, 0.476, 0.478, 0.474, 0.467, 0.476, 0.472, 0.47, 0.459, 0.395, 0.425, 0.404, 0.461, 0.0, 0.313, 0.364, 0.474, 0.47, 0.46, 0.478], 
+    [0.423, 0.43, 0.392, 0.476, 0.472, 0.463, 0.395, 0.442, 0.427, 0.465, 0.445, 0.42, 0.254, 0.37, 0.36, 0.446, 0.313, 0.0, 0.304, 0.451, 0.462, 0.46, 0.477], 
+    [0.47, 0.363, 0.446, 0.415, 0.457, 0.458, 0.415, 0.435, 0.465, 0.428, 0.452, 0.433, 0.37, 0.43, 0.422, 0.467, 0.364, 0.304, 0.0, 0.379, 0.428, 0.408, 0.47], 
+    [0.475, 0.374, 0.469, 0.402, 0.375, 0.387, 0.362, 0.421, 0.458, 0.295, 0.432, 0.461, 0.438, 0.437, 0.415, 0.469, 0.474, 0.451, 0.379, 0.0, 0.417, 0.244, 0.469], 
+    [0.465, 0.119, 0.471, 0.403, 0.393, 0.379, 0.314, 0.225, 0.457, 0.171, 0.288, 0.275, 0.442, 0.387, 0.453, 0.468, 0.47, 0.462, 0.428, 0.417, 0.0, 0.363, 0.377], 
+    [0.472, 0.198, 0.455, 0.412, 0.316, 0.352, 0.395, 0.362, 0.469, 0.169, 0.348, 0.356, 0.363, 0.264, 0.362, 0.462, 0.46, 0.46, 0.408, 0.244, 0.363, 0.0, 0.465], 
+    [0.474, 0.399, 0.478, 0.411, 0.436, 0.459, 0.465, 0.454, 0.479, 0.428, 0.463, 0.453, 0.471, 0.447, 0.473, 0.44, 0.478, 0.477, 0.47, 0.469, 0.377, 0.465, 0.0]
+];
+
+
+
+
+
+// geometry constants
+const width = 1000;
+const height = 600;
+const targetCenter_x = width/2 - 70;
+const targetCenter_y = height/2;
+const radius = Math.min(width, height) / 2 - 90;
+const radius2 = radius + 30;
+const duration = 1000;
+const subduration = duration * 3 / 4;
+const d3colors = d3.scale.category10();
+
+
+
+
+
+//
+// Helper functions for positioning elements around the main circle
+//
+
+function theta(i,j,count){
+  // angle of index i in degrees, assuming index j is at 0 degrees:
+  // distributes the various skill sets evenly around a circle.
+  j = j || 0; // optional argument defaults to 0
+  count = count || skillSets.length;
+  // HACK: not dividing into exact fractions of 360 to avoid weird theta = 180 case. 
+  var th = 359.95/count * ( i - j > 0 ? i - j : i - j + count); 
+  return th < 180 ? th : th - 360;
+} 
+function counterRotate(i,j){
+  // angle to counter-rotate text by, so that it remains horizontal.
+  return -theta(i,j);
+}
+function textXOffsetRatio(i,j){
+  // returns ratio (of total text width) to shift the text by depending on position.
+  return (Math.cos( 2 * Math.PI / 360 * theta(i,j)) - 1) / 2;
+}
+function textYOffsetRatio(i,j){
+  // returns vertical distance to shift text by to make for better spacing.
+  return Math.pow(Math.sin(2 * Math.PI / 360 * theta(i,j) ), 9) * 50;
+}
+
+
+
+
+
+//
+// Setup initial coordinate system and first (global) elements
+//
+
+const svg = d3.select("#skircles_svg")  
+    .attr("width", width)
+    .attr("height", height)
+    .on("click",function(){individualMouseoverEnabled = true;});
+
+const target = svg.append("g") // frame of reference offset to center of circle.
+    .attr("transform", "translate(" + targetCenter_x + "," + targetCenter_y + ")")
+
+target.append("g")
+  .append("circle")
+    .attr("class", "dashed")
+    .attr("r", radius);
+
+
+
+
+
+
+//
+// Setup the base of the rigging, that will bind to the list of skill sets data.
+// (you can think of this as a set of bones in 3D animation software)
+//
+
+const ray = target.append("g")  // Radial axes
+    .attr("class", "a axis")
+  .selectAll("g")
+    .data(skillSets)     // bind the dataset to the rays. All other elements of this vis are children of ray, and inherit the binding.
+  .enter().append("g")
+    .attr("transform", function(d,i){return "rotate(" + theta(i) + ")";});
+
+
+
+
+
+
+// 
+// Setup further rigging, inheriting the data binding, adding display elements as needed
+//
+
+const line = ray.append("line")
+    .attr("class", "dashed")
+    .attr("x1", radius)
+    .attr("x2", function(d,i) {return radius2 + Math.abs(textYOffsetRatio(i));});
+
+
+
+
+
+
+
+
+
+// 
+// Layer the geometry transformations - children inherit their parents' coordinate system
+//
+
+const textanchor = ray.append("g")
+    .attr("transform", "translate(" + radius2 + ")");
+
+const cachedTextLengths = {}; // cached length of strings for font size = 10 (used for counter-rotating text later)
+const textlabel = textanchor.append("text")
+    .attr("x", 0)
+    .attr("dy", ".35em")
+    .text(function(d){return d.fine_label;})
+    .attr("font-size", 10)
+    .attr("fill", function(d){return d3colors(d.coarse_label);})
+    .attr("transform", function(d,i){
+      cachedTextLengths[i] = this.getComputedTextLength();
+      return "rotate(" + counterRotate(i) + 
+        ") translate(" + (textXOffsetRatio(i) * cachedTextLengths[i]) +
+        " " + textYOffsetRatio(i) + ")";});
+
+
+
+//
+// The skill set circles (aka "skircles") themselves...
+//
+
+const skircle = ray.append("circle")
+    .classed("skircle", true)
+    .attr("r",function(d){return Math.sqrt(d.size * 10 / Math.PI);})
+    .attr("fill", function(d){return d3colors(d.coarse_label);})
+    .attr("stroke", function(d){return d3colors(d.coarse_label);})
+    .attr("fill-opacity", 0.5)
+    .attr("stroke-opacity", 0.9)
+    .attr("pointer-events", "visible")
+    .attr("cx", radius)
+    .attr("cy", 0.0);
+
+
+
+
+
+// 
+// Define dynamic behavior (animations) on click.
+// The geometric transforms specifying the animations are again split out among the different rigging elements,
+// with each child element inheriting its parent's coordinate system.
+//
+
+const clickBehavior = function(p,j){
+      ray.transition().duration(duration)
+          .attr("transform", function(d,i){return "rotate(" + theta(i,j) + ")";});
+
+      line.transition().duration(subduration)
+          .attr("x1", function(d,i){
+            return radius * 2 * (typeof j === typeof 1 ? skillSetDistances[i][j] : 0.5);})
+          .attr("x2", function(d,i) {return radius2 + Math.abs(textYOffsetRatio(i,j));});
+
+      textlabel.transition().duration(duration)
+          .attr("font-size", function(d,i){return i === j ? 30 : 10;})
+          .attr("transform", function(d,i){
+            return "rotate(" + counterRotate(i,j) + ") translate(" + 
+              (textXOffsetRatio(i,j) * cachedTextLengths[i]) +
+              " " + textYOffsetRatio(i,j) + ")";});
+
+      skircle.transition().duration(subduration)
+          .attr("cx", function(d,i){return radius * 2 * (typeof j ===  typeof 1 ? skillSetDistances[i][j] : 0.5);})
+          .attr("fill-opacity", function(d,i){return i === j ? 0.9 : 0.4;})
+          .attr("stroke-opacity", 0.9)
+          .attr("pointer-events", "visible");
+      
+      d3.event.stopPropagation();
+};
+
+// 
+// Bind onclick behavior to display elements
+//
+
+ray.on("click", function(d,i){
+    clickBehavior(d,i);
+});
+svg.on("click", function(){
+    clickBehavior(null,null);
+});
+
+
+
+
+//
+// Et voila!
+//
+
+</script>
+</body>
+</html>
